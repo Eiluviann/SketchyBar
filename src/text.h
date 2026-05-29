@@ -46,6 +46,7 @@ struct text {
   float    symbol_palette_b[3];
   float    symbol_palette_a[3];
   int      symbol_palette_count;
+  float    symbol_variable_value; // 0.0–1.0 for variable symbols; negative = not set
 
   // SF Symbols animation
   uint8_t  symbol_anim_type;

@@ -89,6 +89,7 @@ static NSImageSymbolConfiguration* build_config(const char* weight,
           : ws;
   }
   #endif
+
   return cfg;
 }
 #endif
@@ -105,12 +106,27 @@ CGImageRef symbol_create(const char* name,
                          float* palette_r, float* palette_g,
                          float* palette_b, float* palette_a,
                          int palette_count,
+                         float variable_value,
                          bool* is_template_out) {
   @autoreleasepool {
     #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
     if (@available(macOS 11.0, *)) {
-      NSImage* img = [NSImage imageWithSystemSymbolName:@(name)
-                                  accessibilityDescription:nil];
+      NSImage* img = nil;
+
+      // Variable-value rendering (macOS 13+): 0.0–1.0 controls fill level,
+      // e.g. wifi at 0.66 shows 2 of 3 bars. The value is passed at image-
+      // creation time — NSImageSymbolConfiguration has no variable-value API.
+      #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+      if (variable_value >= 0.0f && (@available(macOS 13.0, *))) {
+        img = [NSImage imageWithSystemSymbolName:@(name)
+                                   variableValue:(double)variable_value
+                         accessibilityDescription:nil];
+      }
+      #endif
+      if (!img) {
+        img = [NSImage imageWithSystemSymbolName:@(name)
+                            accessibilityDescription:nil];
+      }
       if (!img) return NULL;
 
       NSImageSymbolConfiguration* cfg =

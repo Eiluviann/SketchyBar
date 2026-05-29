@@ -56,6 +56,7 @@
 #define PROPERTY_SYMBOL_RENDERING              "rendering"
 #define PROPERTY_SYMBOL_PALETTE                "palette"
 #define PROPERTY_SYMBOL_ANIMATE                "animate"
+#define PROPERTY_SYMBOL_VALUE                  "value"
 #define PROPERTY_SYMBOL_ANIM_LAYER             "animation.layer"
 #define PROPERTY_SYMBOL_ANIM_REPEAT            "animation.repeat"
 #define PROPERTY_SYMBOL_ANIM_SPEED             "animation.speed"

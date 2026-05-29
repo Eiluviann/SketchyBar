@@ -31,6 +31,8 @@
 // For monochrome: returns white-on-transparent mask, sets *is_template_out = true.
 // For other modes: returns pre-coloured image, sets *is_template_out = false.
 // Returns NULL on failure or macOS < 11.
+// variable_value: 0.0–1.0 for variable-value rendering (macOS 13+);
+// pass a negative value to leave it unset (symbol renders in its default state).
 CGImageRef symbol_create(const char* name,
                          const char* weight,
                          const char* scale,
@@ -41,6 +43,7 @@ CGImageRef symbol_create(const char* name,
                          float*      palette_b,
                          float*      palette_a,
                          int         palette_count,
+                         float       variable_value,
                          bool*       is_template_out);
 
 // Opaque native-effect animation context (macOS 14+).

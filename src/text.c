@@ -268,6 +268,7 @@ static void text_prepare_line(struct text* text) {
                               text->symbol_palette_b,
                               text->symbol_palette_a,
                               text->symbol_palette_count,
+                              text->symbol_variable_value,
                               &is_template);
         } else {
           is_template = false;
@@ -329,22 +330,22 @@ static void text_prepare_line(struct text* text) {
   text->line.line = CTLineCreateWithAttributedString(mattr);
   CFRelease(mattr);
 
-  CTLineGetTypographicBounds(text->line.line,
-                             &text->line.ascent,
-                             &text->line.descent,
-                             NULL                );
+  CGFloat typographic_width =
+    CTLineGetTypographicBounds(text->line.line,
+                               &text->line.ascent,
+                               &text->line.descent,
+                               NULL                );
 
   text->bounds = CTLineGetBoundsWithOptions(text->line.line,
                                             kCTLineBoundsUseGlyphPathBounds);
 
-  // kCTLineBoundsUseGlyphPathBounds gives wrong origin.y / size.height for lines
-  // whose only content is CTRunDelegate placeholders (U+FFFC): the ORC has no
-  // glyph path, so its visual bounds are near-zero. CTLineGetTypographicBounds
-  // (called above) correctly reflects run-delegate ascent/descent, so use it
-  // for the vertical metrics. Width still comes from glyph path bounds.
-  text->bounds.size.width  = (uint32_t)(text->bounds.size.width           + 1.5);
+  // kCTLineBoundsUseGlyphPathBounds gives near-zero width, height, and origin.y
+  // for lines whose only content is CTRunDelegate ORC placeholders (U+FFFC has
+  // no glyph path). CTLineGetTypographicBounds correctly reflects run-delegate
+  // metrics: its return value is the advance width, and it fills ascent/descent.
+  text->bounds.size.width  = (uint32_t)(typographic_width                      + 1.5);
   text->bounds.size.height = (uint32_t)(text->line.ascent + text->line.descent + 1.5);
-  text->bounds.origin.x    = (int32_t) (text->bounds.origin.x             + 0.5);
+  text->bounds.origin.x    = (int32_t) (text->bounds.origin.x                  + 0.5);
   text->bounds.origin.y    = (int32_t)(-text->line.descent                 + 0.5);
 
   text->width = text->bounds.size.width;
@@ -413,10 +414,11 @@ void text_init(struct text* text) {
   color_init(&text->color, 0xffffffff);
   color_init(&text->highlight_color, 0xff000000);
 
-  text->symbol_weight        = NULL;
-  text->symbol_scale         = NULL;
-  text->symbol_rendering     = SYMBOL_RENDERING_MONOCHROME;
-  text->symbol_palette_count = 0;
+  text->symbol_weight          = NULL;
+  text->symbol_scale           = NULL;
+  text->symbol_rendering       = SYMBOL_RENDERING_MONOCHROME;
+  text->symbol_palette_count   = 0;
+  text->symbol_variable_value  = -1.0f;
 
   text->symbol_anim_type   = SYMBOL_ANIM_NONE;
   text->symbol_anim_layer  = SYMBOL_LAYER_WHOLE;
@@ -909,6 +911,15 @@ static bool text_set_symbol_property(struct text* text, FILE* rsp,
     float prev = text->symbol_anim_speed;
     text->symbol_anim_speed = token_to_float(get_token(&message));
     return text->symbol_anim_speed != prev;
+
+  } else if (token_equals(entry, PROPERTY_SYMBOL_VALUE)) {
+    float prev = text->symbol_variable_value;
+    // Accept 0–100 (percent) and normalise to 0.0–1.0.
+    // Passing a value < 0 clears variable rendering (use symbol default).
+    float pct = token_to_float(get_token(&message));
+    text->symbol_variable_value = (pct >= 0.0f) ? (pct / 100.0f) : -1.0f;
+    if (text->symbol_variable_value == prev) return false;
+    return text_set_string(text, text->string, true);
   }
 
   respond(rsp, "[!] Symbol: Unknown property '%s'\n", entry.text);
