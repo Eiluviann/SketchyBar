@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/Sbar.svg" />
+  <img src="images/Sbar.svg" alt="SketchyBar" />
 </p>
 
 <p align="center">
