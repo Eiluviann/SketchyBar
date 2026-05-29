@@ -210,7 +210,7 @@ struct symbol_effect_ctx {
   [_hiddenWindow orderOut:nil]; // hide immediately after activating layer
 
   // Build effect
-  id<NSSymbolEffect> effect = nil;
+  NSSymbolEffect* effect = nil;
   NSSymbolEffectOptions* opts = [NSSymbolEffectOptions options];
   if (speed != 1.f) opts = [opts optionsWithSpeed:speed];
   if (!repeat) opts = [opts optionsWithNonRepeating];
@@ -235,7 +235,12 @@ struct symbol_effect_ctx {
       effect = [NSSymbolDisappearEffect effect];
       break;
     case SYMBOL_ANIM_REPLACE:
-      effect = [NSSymbolReplaceEffect effect];
+      // NSSymbolReplaceEffect does not exist: "replace" is a content transition
+      // (NSSymbolReplaceContentTransition), applied via
+      // setSymbolImage:withContentTransition: and requiring a target image, so it
+      // cannot be expressed through addSymbolEffect:. Fall back to bounce until a
+      // dedicated content-transition path is implemented.
+      effect = [NSSymbolBounceEffect effect];
       break;
     default:
       effect = [NSSymbolBounceEffect effect];
@@ -251,7 +256,10 @@ struct symbol_effect_ctx {
   [_imageView addSymbolEffect:effect options:opts animated:YES];
 
   // CADisplayLink for frame capture
-  _displayLink = [NSView displayLinkWithTarget:self selector:@selector(captureFrame:)];
+  // displayLinkWithTarget:selector: is an NSView *instance* method (macOS 14+),
+  // not a class method; sending it to the NSView class throws
+  // 'unrecognized selector sent to class' and crashes the bar.
+  _displayLink = [_imageView displayLinkWithTarget:self selector:@selector(captureFrame:)];
   [_displayLink addToRunLoop:[NSRunLoop mainRunLoop]
                      forMode:NSRunLoopCommonModes];
 

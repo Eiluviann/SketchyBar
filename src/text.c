@@ -472,13 +472,15 @@ static bool text_set_width(struct text* text, int width) {
 }
 
 // Float-typed setters (used with ANIMATE_FLOAT / direct animation_setup + as_float)
-static bool symbol_set_anim_scale(struct text* text, float value) {
+static bool symbol_set_anim_scale(void* target, float value) {
+  struct text* text = target;
   if (text->symbol_anim_scale == value) return false;
   text->symbol_anim_scale = value;
   return true;
 }
 
-static bool symbol_set_anim_alpha(struct text* text, float value) {
+static bool symbol_set_anim_alpha(void* target, float value) {
+  struct text* text = target;
   if (text->symbol_anim_alpha == value) return false;
   text->symbol_anim_alpha = value;
   return true;

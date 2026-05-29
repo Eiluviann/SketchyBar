@@ -9,7 +9,8 @@ LIBS     = -framework Carbon \
 					 -F/System/Library/PrivateFrameworks \
 					 -framework SkyLight \
 					 -framework DisplayServices \
-					 -framework MediaRemote
+					 -framework MediaRemote \
+					 -framework Symbols
 
 ODIR     = bin
 SRC      = src
