@@ -12,7 +12,7 @@ struct symbol_run_data {
   CGFloat    ascent;
   CGFloat    descent;
   bool       is_template;   // true → mask-tint; false → draw directly
-  symbol_effect_ctx* effect; // non-NULL when a native animation is active
+  struct text* owner; // read owner->symbol_effect live to avoid dangling ptr after stop/replace
 };
 
 static CGFloat sym_get_ascent (void* r) { return ((struct symbol_run_data*)r)->ascent;  }
@@ -82,8 +82,9 @@ static void text_draw_symbol_runs(CTLineRef line, CGContextRef ctx,
 
     CGImageRef image = d->image;
     bool is_template = d->is_template;
-    if (d->effect) {
-      CGImageRef live = symbol_effect_current_frame(d->effect);
+    symbol_effect_ctx* fx = d->owner ? d->owner->symbol_effect : NULL;
+    if (fx) {
+      CGImageRef live = symbol_effect_current_frame(fx);
       if (live) { image = live; is_template = false; }
     }
     if (!image) continue;
@@ -289,7 +290,7 @@ static void text_prepare_line(struct text* text) {
           data->ascent      = font_ascent;
           data->descent     = font_descent;
           data->is_template = is_template;
-          data->effect      = text->symbol_effect;
+          data->owner       = text;
 
           CTRunDelegateRef delegate = CTRunDelegateCreate(&sym_callbacks, data);
 
@@ -336,10 +337,15 @@ static void text_prepare_line(struct text* text) {
   text->bounds = CTLineGetBoundsWithOptions(text->line.line,
                                             kCTLineBoundsUseGlyphPathBounds);
 
-  text->bounds.size.width  = (uint32_t)(text->bounds.size.width  + 1.5);
-  text->bounds.size.height = (uint32_t)(text->bounds.size.height + 1.5);
-  text->bounds.origin.x    = (int32_t) (text->bounds.origin.x   + 0.5);
-  text->bounds.origin.y    = (int32_t) (text->bounds.origin.y   + 0.5);
+  // kCTLineBoundsUseGlyphPathBounds gives wrong origin.y / size.height for lines
+  // whose only content is CTRunDelegate placeholders (U+FFFC): the ORC has no
+  // glyph path, so its visual bounds are near-zero. CTLineGetTypographicBounds
+  // (called above) correctly reflects run-delegate ascent/descent, so use it
+  // for the vertical metrics. Width still comes from glyph path bounds.
+  text->bounds.size.width  = (uint32_t)(text->bounds.size.width           + 1.5);
+  text->bounds.size.height = (uint32_t)(text->line.ascent + text->line.descent + 1.5);
+  text->bounds.origin.x    = (int32_t) (text->bounds.origin.x             + 0.5);
+  text->bounds.origin.y    = (int32_t)(-text->line.descent                 + 0.5);
 
   text->width = text->bounds.size.width;
   text_calculate_truncated_width(text, attributes);
