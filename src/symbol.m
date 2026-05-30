@@ -139,7 +139,12 @@ CGImageRef symbol_create(const char* name,
         *is_template_out = (rendering == SYMBOL_RENDERING_MONOCHROME);
 
       float s = symbol_get_screen_scale();
-      NSRect rect = NSMakeRect(0, 0, size * s, size * s);
+      CGSize natural = img.size;
+      CGFloat render_w = (natural.height > 0)
+                         ? (natural.width / natural.height) * size * s
+                         : size * s;
+      CGFloat render_h = size * s;
+      NSRect rect = NSMakeRect(0, 0, render_w, render_h);
       CGImageRef result = (CGImageRef)CFRetain(
         [img CGImageForProposedRect:&rect context:nil hints:nil]);
       return result;

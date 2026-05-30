@@ -480,6 +480,17 @@ static bool text_set_width(struct text* text, int width) {
 }
 
 // Float-typed setters (used with ANIMATE_FLOAT / direct animation_setup + as_float)
+
+// Animates icon.symbol.value: re-renders the symbol at each interpolated variable
+// value so the fill level smoothly transitions (e.g. speaker waves fill/drain).
+static bool symbol_set_var_value(void* target, float value) {
+  struct text* text = (struct text*)target;
+  float clamped = value < 0.0f ? -1.0f : (value > 1.0f ? 1.0f : value);
+  if (text->symbol_variable_value == clamped) return false;
+  text->symbol_variable_value = clamped;
+  return text_set_string(text, text->string, true);
+}
+
 static bool symbol_set_anim_scale(void* target, float value) {
   struct text* text = target;
   if (text->symbol_anim_scale == value) return false;
@@ -917,9 +928,15 @@ static bool text_set_symbol_property(struct text* text, FILE* rsp,
     // Accept 0–100 (percent) and normalise to 0.0–1.0.
     // Passing a value < 0 clears variable rendering (use symbol default).
     float pct = token_to_float(get_token(&message));
-    text->symbol_variable_value = (pct >= 0.0f) ? (pct / 100.0f) : -1.0f;
-    if (text->symbol_variable_value == prev) return false;
-    return text_set_string(text, text->string, true);
+    float new_val = (pct >= 0.0f) ? (pct / 100.0f) : -1.0f;
+    if (new_val == prev) return false;
+    // Animate from current value to new value using the bar's float animator.
+    // When --animate is active this gives a smooth per-frame re-render of the
+    // symbol at each interpolated variable value (e.g. speaker waves fill/drain).
+    float from = (prev >= 0.0f) ? prev : (new_val >= 0.0f ? new_val : 0.0f);
+    bool needs_refresh = false;
+    ANIMATE_FLOAT(symbol_set_var_value, text, from, new_val);
+    return needs_refresh;
   }
 
   respond(rsp, "[!] Symbol: Unknown property '%s'\n", entry.text);
