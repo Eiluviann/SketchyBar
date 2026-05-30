@@ -2,6 +2,7 @@
 #include <CoreText/CoreText.h>
 #include "background.h"
 #include "font.h"
+#include "symbol.h"
 
 struct text_line {
   CTLineRef line;
@@ -35,6 +36,28 @@ struct text {
   struct shadow shadow;
 
   struct background background;
+
+  // SF Symbols appearance
+  char*    symbol_weight;
+  char*    symbol_scale;
+  uint8_t  symbol_rendering;
+  float    symbol_palette_r[3];
+  float    symbol_palette_g[3];
+  float    symbol_palette_b[3];
+  float    symbol_palette_a[3];
+  int      symbol_palette_count;
+  float    symbol_variable_value; // 0.0–1.0 for variable symbols; negative = not set
+
+  // SF Symbols animation
+  uint8_t  symbol_anim_type;
+  uint8_t  symbol_anim_layer;
+  bool     symbol_anim_repeat;
+  float    symbol_anim_speed;
+  float    symbol_anim_scale;
+  float    symbol_anim_alpha;
+
+  // Native effect context (macOS 14+), NULL when not animating
+  symbol_effect_ctx* symbol_effect;
 };
 
 void text_init(struct text* text);

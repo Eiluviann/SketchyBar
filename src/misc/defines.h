@@ -49,6 +49,17 @@
 #define SUB_DOMAIN_BORDER_COLOR                "border_color"
 #define SUB_DOMAIN_HIGHLIGHT_COLOR             "highlight_color"
 #define SUB_DOMAIN_FILL_COLOR                  "fill_color"
+#define SUB_DOMAIN_SYMBOL                      "symbol"
+
+#define PROPERTY_SYMBOL_WEIGHT                 "weight"
+#define PROPERTY_SYMBOL_SCALE                  "scale"
+#define PROPERTY_SYMBOL_RENDERING              "rendering"
+#define PROPERTY_SYMBOL_PALETTE                "palette"
+#define PROPERTY_SYMBOL_ANIMATE                "animate"
+#define PROPERTY_SYMBOL_VALUE                  "value"
+#define PROPERTY_SYMBOL_ANIM_LAYER             "animation.layer"
+#define PROPERTY_SYMBOL_ANIM_REPEAT            "animation.repeat"
+#define PROPERTY_SYMBOL_ANIM_SPEED             "animation.speed"
 
 #define PROPERTY_FONT                          "font"
 #define PROPERTY_COLOR                         "color"
